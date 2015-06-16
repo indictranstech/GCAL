@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include gcal *.css
+recursive-include gcal *.csv
+recursive-include gcal *.html
+recursive-include gcal *.ico
+recursive-include gcal *.js
+recursive-include gcal *.json
+recursive-include gcal *.md
+recursive-include gcal *.png
+recursive-include gcal *.py
+recursive-include gcal *.svg
+recursive-include gcal *.txt
+recursive-exclude gcal *.pyc
