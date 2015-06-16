@@ -80,19 +80,21 @@ scheduler_events = {
 	"all": [
 		"gcal.gcal_methods.sync_google_events"
 	],
-	# "daily": [
-	# 	"gcal.tasks.daily"
-	# ],
-	# "hourly": [
-	# 	"gcal.tasks.hourly"
-	# ],
-	# "weekly": [
-	# 	"gcal.tasks.weekly"
-	# ]
-	# "monthly": [
-	# 	"gcal.tasks.monthly"
-	# ]
+	"daily": [
+		"gcal.tasks.daily"
+	],
+	"hourly": [
+		"gcal.tasks.hourly"
+	],
+	"weekly": [
+		"gcal.tasks.weekly"
+	],
+	"monthly": [
+		"gcal.tasks.monthly"
+	]
 }
+
+fixtures = ['Custom Field']
 
 # Testing
 # -------
