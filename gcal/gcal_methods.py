@@ -46,7 +46,6 @@ def update_gcal_event(doc, method):
 			frappe.msgprint("New Google Calender Event is created successfully") 
 
 def delete_gcal_event(doc, method):
-	frappe.errprint("in delete_gcal_event")
 	service = get_service_object()
 	if doc.is_gcal_event and doc.gcal_id:
 		service.events().delete(calendarId='primary', eventId=doc.gcal_id).execute()
@@ -58,6 +57,7 @@ def delete_gcal_event(doc, method):
 
 def get_google_event_dict(doc):
 	event = {
+		'kind':'Frappe#event',
 		'summary': doc.subject,
 		'location': None,
 		'description': doc.description,
@@ -88,13 +88,12 @@ def get_gcal_date(param, doc):
 	return gcal_date
 
 def get_formatted_date(date):
-	list_date = date.split(' ')
-	if list_date[1] == "00:00:00":
-		date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d")
-		return {'date': date}
+	str_date = str(date) if isinstance(date, datetime) else date
+	if str_date.split(' ')[1] == "00:00:00":
+		return {'date': datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d")}
 	else:
-		date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30"	#replace with time zone
-		return {'dateTime':date}
+		# set timezone
+		return {'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30"}
 
 def get_attendees():
 	return []
@@ -117,8 +116,8 @@ def get_repeat_on(doc):
 	elif repeat_on == "Every Month": return "MONTHY"
 	else: return "YEARLY"
 
-# # Sync Google Calendar Events to Frappe Event
+# # # Sync Google Calendar Events to Frappe Event
 
-def sync_google_events():
-	print "in sync_google_events"
-	service = get_service_object()
+# def sync_google_events():
+# 	print "in sync_google_events"
+# 	service = get_service_object()

@@ -69,7 +69,7 @@ app_version = "0.0.1"
 doc_events = {
 	"Event": {
 		"on_update": "gcal.gcal_methods.update_gcal_event",
-		"on_trash": "gcal.gcal_methods.delete_gcal_event"
+		# "on_trash": "gcal.gcal_methods.delete_gcal_event"
 	}
 }
 
@@ -78,19 +78,19 @@ doc_events = {
 
 scheduler_events = {
 	"all": [
-		"gcal.gcal_methods.sync_google_events"
+		"gcal.tasks.sync_all"
 	],
 	"daily": [
-		"gcal.tasks.daily"
+		"gcal.tasks.sync_daily"
 	],
 	"hourly": [
-		"gcal.tasks.hourly"
+		"gcal.tasks.sync_hourly"
 	],
 	"weekly": [
-		"gcal.tasks.weekly"
+		"gcal.tasks.sync_weekly"
 	],
 	"monthly": [
-		"gcal.tasks.monthly"
+		"gcal.tasks.sync_monthly"
 	]
 }
 
