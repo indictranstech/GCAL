@@ -116,14 +116,12 @@ def get_attendees(doc):
 	return email_ids
 
 def get_recurrence_rule(doc):
-	import json
-
 	until = datetime.strptime(doc.repeat_till, '%Y-%m-%d').strftime("%Y%m%dT%H%M%SZ")
-	recur_rule = [
-		"PRULE:FREQ=%s;UNTIL=%s"%(get_repeat_on(doc), until),
-	]
 
-	return json.dumps(recur_rule)
+	if doc.repeat_on == "Every Day": return [json.dumps("RRULE:FREQ=DAILY;UNTIL=%s"%(until))]
+	elif doc.repeat_on == "Every Week": return ["RRULE:FREQ=WEEKLY;UNTIL=%s"%(until)]
+	elif doc.repeat_on == "Every Month": return ["RRULE:FREQ=MONTHLY;UNTIL=%s"%(until)]
+	else: return ["RRULE:FREQ=YEARLY;UNTIL=%s"%(until)]
 
 def get_repeat_on(doc):
 	repeat_on = doc.repeat_on
