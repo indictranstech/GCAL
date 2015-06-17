@@ -12,24 +12,27 @@ from oauth2client.keyring_storage import Storage
 def sync_all():
 	# get the list of user with 
 	users = get_users_by_sync_optios('Hourly')
-	# sych the calendar for all frappe users 
 	sych_users_calender(users)
 
 def sync_hourly():
 	# get the list of user having sync option as "hourly"
 	users = get_users_by_sync_optios('Hourly')
+	sych_users_calender(users)
 
 def sync_daily():
 	# get the list of user having sync option as "Daily"
 	users = get_users_by_sync_optios('Daily')
+	sych_users_calender(users)
 
 def sync_weekly():
 	# get the list of user having sync option as "Weekly"
 	users = get_users_by_sync_optios('Weekly')
+	sych_users_calender(users)
 
 def sync_monthly():
 	# get the list of user having sync option as "Monthly"
 	users = get_users_by_sync_optios('Monthly')
+	sych_users_calender(users)
 
 def get_users_by_sync_optios(mode):
 	return frappe.db.sql("select gmail_id from `tabSync Configuration` where is_sync=1 and sync_options='Hourly'",as_list=True)
@@ -105,7 +108,6 @@ def set_values(doc, event):
 def get_formatted_date(str_date):
 	# remove timezone from str_date
 	str_date = str_date.split("+")[0]
-
 	date = None
 	
 	if len(str_date.split("T")) == 1:
