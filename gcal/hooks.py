@@ -76,23 +76,23 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-scheduler_events = {
-	"all": [
-		"gcal.tasks.sync_all"
-	],
-	"daily": [
-		"gcal.tasks.sync_daily"
-	],
-	"hourly": [
-		"gcal.tasks.sync_hourly"
-	],
-	"weekly": [
-		"gcal.tasks.sync_weekly"
-	],
-	"monthly": [
-		"gcal.tasks.sync_monthly"
-	]
-}
+# scheduler_events = {
+# 	"all": [
+# 		"gcal.tasks.sync_all"
+# 	],
+# 	"daily": [
+# 		"gcal.tasks.sync_daily"
+# 	],
+# 	"hourly": [
+# 		"gcal.tasks.sync_hourly"
+# 	],
+# 	"weekly": [
+# 		"gcal.tasks.sync_weekly"
+# 	],
+# 	"monthly": [
+# 		"gcal.tasks.sync_monthly"
+# 	]
+# }
 
 fixtures = ['Custom Field']
 

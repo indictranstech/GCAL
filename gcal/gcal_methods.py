@@ -57,14 +57,13 @@ def delete_gcal_event(doc, method):
 
 def get_google_event_dict(doc):
 	event = {
-		'kind':'Frappe#event',
 		'summary': doc.subject,
 		'location': None,
 		'description': doc.description,
 		'start': get_gcal_date('start', doc),
 		'end': get_gcal_date('end', doc),
 		'recurrence':get_recurrence_rule(doc) if doc.repeat_this_event else [],
-		'attendees': get_attendees(),
+		'attendees': get_attendees(doc),
 		'reminders':{
 			'useDefault':False,
 			'overrides': [
@@ -89,24 +88,49 @@ def get_gcal_date(param, doc):
 
 def get_formatted_date(date):
 	str_date = str(date) if isinstance(date, datetime) else date
-	if str_date.split(' ')[1] == "00:00:00":
-		return {'date': datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d")}
-	else:
-		# set timezone
-		return {'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30"}
+	# if str_date.split(' ')[1] == "00:00:00":
+	# 	return {'date': datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d")}
+	# else:
+	# 	return {'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30", 'timeZone': 'Asia/Calcutta'}
 
-def get_attendees():
-	return []
+	if str_date.split(' ')[1] == "00:00:00":
+		return {'date': datetime.strptime(str_date, '%d-%m-%Y %H:%M:%S').strftime("%Y-%m-%d")}
+	else:
+		return {'dateTime':datetime.strptime(str_date, '%d-%m-%Y %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30", 'timeZone': 'Asia/Calcutta'}
+
+def get_attendees(doc):
+	# get Email Id's of all the users
+	# get all the roles
+	email_ids = []
+	if doc.roles:
+		roles = []
+		
+		for doc in doc.roles:
+			roles.append(str(doc.role))
+		
+		condition = "('%s')" % "','".join(tuple(roles))
+
+		result_set = frappe.db.sql("""SELECT DISTINCT email FROM tabUser WHERE name <> '%s' AND name IN
+			(SELECT DISTINCT parent FROM tabUserRole WHERE role in %s)"""%(frappe.session.user, condition), as_dict=True)
+
+		email_ids = result_set if result_set else []
+
+	return email_ids
 
 def get_recurrence_rule(doc):
-	# frappe.errprint("in get_recurrence_rule")
-	# recur_rule = [
-	# 	'DTSTART;'+ get_gcal_date('start',doc),
-	# 	'DTEND';+ get_gcal_date('end',doc),
-	# 	'PRULE:FREQ='+ get_prule(doc) + ""
-	# ]
-	# return recur_rule
-	return []
+	# dtstart = datetime.strptime(doc.starts_on, '%Y-%m-%d %H:%M:%S').strftime("%Y%m%dT%H%M%SZ")
+	# dtend = datetime.strptime(doc.starts_on, '%Y-%m-%d %H:%M:%S').strftime("%Y%m%dT%H%M%SZ") if doc.ends_on else dtstart
+	until = datetime.strptime(doc.repeat_till, '%Y-%m-%d').strftime("%Y%m%dT%H%M%S+05:30")
+	recur_rule = [
+		# 'DTSTART;' + dtstart,
+		# 'DTEND;' + dtend,
+		'PRULE:FREQ='+ get_repeat_on(doc) + ";UNTIL="+ until
+	]
+	return recur_rule
+
+def get_prule(doc):
+	until = datetime.strptime(doc.repeat_till, '%Y-%m-%d').strftime("%Y%m%dT%H%M%SZ")
+	return "FREQ="+ get_repeat_on(doc) + ";UNTIL="+ until
 
 def get_repeat_on(doc):
 	repeat_on = doc.repeat_on

@@ -103,15 +103,17 @@ def set_values(doc, event):
 	return doc
 
 def get_formatted_date(str_date):
-	# Also format the date according to frappe date format
-	date_list = str_date.split("T")
+	# remove timezone from str_date
+	str_date = str_date.split("+")[0]
+
 	date = None
 	
-	if len(date_list) == 1:
+	if len(str_date.split("T")) == 1:
 		str_date = date_list[0] + "T00:00:00"
 	
 	date = datetime.strptime(str_date, '%Y-%m-%dT%H:%M:%S').strftime("%d-%m-%Y %H:%M:%S")
-	return datetime.strptime(date, "%d-%m-%Y %H:%M:%S")
+	# return datetime.strptime(date, "%d-%m-%Y %H:%M:%S")
+	return date
 
 def is_event_already_exist(event):
 	name = frappe.db.get_value("Event",{"gcal_id":event.get("id")},"name")
