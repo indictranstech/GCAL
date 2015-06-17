@@ -69,7 +69,7 @@ app_version = "0.0.1"
 doc_events = {
 	"Event": {
 		"on_update": "gcal.gcal_methods.update_gcal_event",
-		# "on_trash": "gcal.gcal_methods.delete_gcal_event"
+		"on_trash": "gcal.gcal_methods.delete_gcal_event"
 	}
 }
 

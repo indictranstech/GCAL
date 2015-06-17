@@ -50,12 +50,18 @@ def update_gcal_event(doc, method):
 def delete_gcal_event(doc, method):
 	service = get_service_object()
 	if doc.is_gcal_event and doc.gcal_id:
-		service.events().delete(calendarId='primary', eventId=doc.gcal_id).execute()
-		frappe.msgprint("New Google Calender Event is deleted successfully")
-
-		# redirect to event list
-		frappe.local.response["type"] = "redirect"
-		frappe.local.response["location"] = "/desk#List/Event"
+		try:
+			frappe.errprint("in_delete")
+			service.events().delete(calendarId='primary', eventId=doc.gcal_id).execute()
+			frappe.msgprint("New Google Calender Event is deleted successfully")
+		except Exception, e:
+			frappe.msgprint("Error occured while deleting google event\nDeleting Event from Frappe, Please delete the google event manually")
+			frappe.delete_doc("Event", doc.name)
+			frappe.msgprint("Event Deleted From Frappe")
+		finally:
+			# redirect to event list
+			frappe.local.response["type"] = "redirect"
+			frappe.local.response["location"] = "/desk#List/Event"
 
 def get_google_event_dict(doc):
 	import json
@@ -94,7 +100,8 @@ def get_formatted_date(date):
 		return {'date': datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d")}
 	else:
 		return {
-			'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30", 
+			# 'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30", 
+			'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S"),
 			'timeZone': 'Asia/Calcutta'
 		}
 
@@ -118,7 +125,7 @@ def get_attendees(doc):
 def get_recurrence_rule(doc):
 	until = datetime.strptime(doc.repeat_till, '%Y-%m-%d').strftime("%Y%m%dT%H%M%SZ")
 
-	if doc.repeat_on == "Every Day": return [json.dumps("RRULE:FREQ=DAILY;UNTIL=%s"%(until))]
+	if doc.repeat_on == "Every Day": return ["RRULE:FREQ=DAILY;UNTIL=%s"%(until)]
 	elif doc.repeat_on == "Every Week": return ["RRULE:FREQ=WEEKLY;UNTIL=%s"%(until)]
 	elif doc.repeat_on == "Every Month": return ["RRULE:FREQ=MONTHLY;UNTIL=%s"%(until)]
 	else: return ["RRULE:FREQ=YEARLY;UNTIL=%s"%(until)]
