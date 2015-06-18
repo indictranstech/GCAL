@@ -3,9 +3,10 @@ cur_frm.cscript.sync_calender = function(doc){
 	return frappe.call({
 		method:"gcal.gcal_sync.doctype.sync_configuration.sync_configuration.sync_calender",
 		callback: function(r){
-			if (r.message) {
-				window.location.replace(r.message)
-			};
+			if (r.message)
+				window.location.replace(r.message);
+			else
+				frappe.msgprint("Google Calendar Events synced sucessfully")
 		}
 	})
 }

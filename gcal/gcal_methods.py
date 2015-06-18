@@ -129,11 +129,3 @@ def get_recurrence_rule(doc):
 	elif doc.repeat_on == "Every Week": return ["RRULE:FREQ=WEEKLY;UNTIL=%s"%(until)]
 	elif doc.repeat_on == "Every Month": return ["RRULE:FREQ=MONTHLY;UNTIL=%s"%(until)]
 	else: return ["RRULE:FREQ=YEARLY;UNTIL=%s"%(until)]
-
-def get_repeat_on(doc):
-	repeat_on = doc.repeat_on
-
-	if repeat_on == "Every Day": return "DAILY"
-	elif repeat_on == "Every Week": return "WEEKLY"
-	elif repeat_on == "Every Month": return "MONTHLY"
-	else: return "YEARLY"

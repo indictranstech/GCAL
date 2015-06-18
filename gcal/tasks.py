@@ -90,7 +90,8 @@ def set_values(doc, event):
 
 	doc.starts_on = get_formatted_date(start_date)
 	doc.ends_on = get_formatted_date(end_date)
-	
+	frappe.errprint(doc.starts_on)
+	frappe.errprint(get_formatted_date(start_date))
 	doc.all_day = 1 if doc.starts_on == doc.ends_on else 0
 
 	if not event.get('visibility'):
@@ -113,8 +114,7 @@ def get_formatted_date(str_date):
 	if len(str_date.split("T")) == 1:
 		str_date = date_list[0] + "T00:00:00"
 	
-	date = datetime.strptime(str_date, '%Y-%m-%dT%H:%M:%S').strftime("%d-%m-%Y %H:%M:%S")
-	# return datetime.strptime(date, "%d-%m-%Y %H:%M:%S")
+	date = datetime.strptime(str_date, '%Y-%m-%dT%H:%M:%S').strftime("%Y-%m-%d %H:%M:%S")
 	return date
 
 def is_event_already_exist(event):
