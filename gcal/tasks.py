@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from apiclient.discovery import build
 from httplib2 import Http
 import oauth2client
@@ -63,11 +63,12 @@ def sync_google_calendar(credentials):
 def get_gcal_events(credentials):
 	now = datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
 	service = build('calendar', 'v3', http=credentials.authorize(Http()))
+	# eventsResult = service.events().list(
+	# 	calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
+	# 	orderBy='startTime').execute()
 	eventsResult = service.events().list(
-		calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
-		orderBy='startTime').execute()
+		calendarId='primary', timeMin=now).execute()
 	events = eventsResult.get('items', [])
-
 	return events
 
 def save_event(event):
@@ -90,8 +91,7 @@ def set_values(doc, event):
 
 	doc.starts_on = get_formatted_date(start_date)
 	doc.ends_on = get_formatted_date(end_date)
-	frappe.errprint(doc.starts_on)
-	frappe.errprint(get_formatted_date(start_date))
+
 	doc.all_day = 1 if doc.starts_on == doc.ends_on else 0
 
 	if not event.get('visibility'):
@@ -99,6 +99,12 @@ def set_values(doc, event):
 	else:
 		doc.event_type =  "Private" if event['visibility'] == "private" else "Public"
 
+	recurrence_details = get_recurrence_event_fields_value(event.get("recurrence")[0], doc.starts_on) if event.get("recurrence") else {}
+	if recurrence_details:
+		doc.repeat_this_event = recurrence_details.get("repeat_this_event")
+		doc.repeat_on = recurrence_details.get("repeat_on")
+		doc.repeat_till = recurrence_details.get("repeat_till")
+	print doc.repeat_this_event, doc.repeat_on, doc.repeat_till
 	doc.description = event.get("description")
 	doc.is_gcal_event = 1
 	doc.event_owner = event.get("organizer").get("email")
@@ -106,12 +112,66 @@ def set_values(doc, event):
 
 	return doc
 
+def get_recurrence_event_fields_value(recur_rule, starts_on):
+	repeat_on = ""
+	repeat_till = ""
+	# get recurrence rule from string
+	frappe.errprint(recur_rule)
+	for _str in recur_rule.split(";"):
+		if "RRULE:FREQ" in _str:
+			repeat_every = _str.split("=")[1]
+			if repeat_every == "DAILY": repeat_on = "Every Day"
+			elif repeat_every == "WEEKLY": repeat_on = "Every Week"
+			elif repeat_every == "MONTHLY": repeat_on = "Every Month"
+			else: repeat_on = "Every Year"
+		elif "UNTIL" in _str:
+			# get repeat till
+			date = datetime.strptime(_str.split("=")[1], "%Y%m%dT%H%M%SZ")
+			repeat_till = get_repeat_till_date(date)
+		elif "COUNT" in _str:
+			# get repeat till
+			date = datetime.strptime(starts_on, "%Y-%m-%d %H:%M:%S")
+			repeat_till = get_repeat_till_date(date, count=_str.split("=")[1], repeat_on=repeat_on)
+
+	return {
+		"repeat_on": repeat_on,
+		"repeat_till": repeat_till,
+		"repeat_this_event": 1
+	}
+
+def get_repeat_till_date(date, count=None, repeat_on=None):
+	if count:
+		if repeat_on == "Every Day":
+			# add days
+			date = date + timedelta(days=int(count))
+		elif repeat_on == "Every Week":
+			# add weeks
+			date = date + timedelta(weeks=int(count))
+		elif repeat_on == "Every Month":
+			# add months
+			date = add_months(date, int(count))
+		else:
+			# add years
+			date = add_months(date, int(count) * 12)
+
+	return date.strftime("%Y-%m-%d")
+
+def add_months(date, count):
+	import calendar
+	
+	month = date.month - 1 + count
+	year = date.year + month / 12
+	month = month % 12 + 1
+	day = min(date.day,calendar.monthrange(year,month)[1])
+	return datetime.date(year,month,day)
+
 def get_formatted_date(str_date):
 	# remove timezone from str_date
 	str_date = str_date.split("+")[0]
 	date = None
 	
-	if len(str_date.split("T")) == 1:
+	date_list = str_date.split("T")
+	if len(date_list) == 1:
 		str_date = date_list[0] + "T00:00:00"
 	
 	date = datetime.strptime(str_date, '%Y-%m-%dT%H:%M:%S').strftime("%Y-%m-%d %H:%M:%S")
