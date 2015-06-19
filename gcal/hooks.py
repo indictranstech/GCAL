@@ -66,33 +66,33 @@ app_version = "0.0.1"
 # ---------------
 # Hook on document methods and events
 
-doc_events = {
-	"Event": {
-		"on_update": "gcal.gcal_methods.update_gcal_event",
-		"on_trash": "gcal.gcal_methods.delete_gcal_event"
-	}
-}
+# doc_events = {
+# 	"Event": {
+# 		"on_update": "gcal.gcal_methods.update_gcal_event",
+# 		# "on_trash": "gcal.gcal_methods.delete_gcal_event"
+# 	}
+# }
 
 # Scheduled Tasks
 # ---------------
 
-scheduler_events = {
-	"all": [
-		"gcal.tasks.sync_all"
-	],
-	# "daily": [
-	# 	"gcal.tasks.sync_daily"
-	# ],
-	# "hourly": [
-	# 	"gcal.tasks.sync_hourly"
-	# ],
-	# "weekly": [
-	# 	"gcal.tasks.sync_weekly"
-	# ],
-	# "monthly": [
-	# 	"gcal.tasks.sync_monthly"
-	# ]
-}
+# scheduler_events = {
+# 	"all": [
+# 		"gcal.tasks.sync_all"
+# 	],
+# 	# "daily": [
+# 	# 	"gcal.tasks.sync_daily"
+# 	# ],
+# 	# "hourly": [
+# 	# 	"gcal.tasks.sync_hourly"
+# 	# ],
+# 	# "weekly": [
+# 	# 	"gcal.tasks.sync_weekly"
+# 	# ],
+# 	# "monthly": [
+# 	# 	"gcal.tasks.sync_monthly"
+# 	# ]
+# }
 
 fixtures = ['Custom Field']
 

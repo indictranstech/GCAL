@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from apiclient.discovery import build
 from httplib2 import Http
 import oauth2client
@@ -35,7 +35,7 @@ def sync_monthly():
 	sych_users_calender(users)
 
 def get_users_by_sync_optios(mode):
-	return frappe.db.sql("select gmail_id from `tabSync Configuration` where is_sync=1 and sync_options='Hourly'",as_list=True)
+	return frappe.db.sql("select gmail_id from `tabSync Configuration` where is_sync=1 and sync_options='%s'"%(mode),as_list=True)
 
 def sych_users_calender(users):
 	for user in users:
@@ -104,7 +104,17 @@ def set_values(doc, event):
 		doc.repeat_this_event = recurrence_details.get("repeat_this_event")
 		doc.repeat_on = recurrence_details.get("repeat_on")
 		doc.repeat_till = recurrence_details.get("repeat_till")
-	print doc.repeat_this_event, doc.repeat_on, doc.repeat_till
+		# setting up the repeat days
+		if recurrence_details.get("repeat_days"):
+			days = recurrence_details.get("repeat_days")
+			doc.sunday = days.get("sunday")
+			doc.monday = days.get("monday")
+			doc.tuesday = days.get("tuesday")
+			doc.wednesday = days.get("wednesday")
+			doc.thursday = days.get("thursday")
+			doc.friday = days.get("friday")
+			doc.saturday = days.get("saturday")
+	
 	doc.description = event.get("description")
 	doc.is_gcal_event = 1
 	doc.event_owner = event.get("organizer").get("email")
@@ -114,9 +124,9 @@ def set_values(doc, event):
 
 def get_recurrence_event_fields_value(recur_rule, starts_on):
 	repeat_on = ""
-	repeat_till = ""
+	repeat_till = get_repeat_till_date(datetime.strptime(starts_on, "%Y-%m-%d %H:%M:%S"), 3)	# setting default repeat for 3 month
+	repeat_days = {}
 	# get recurrence rule from string
-	frappe.errprint(recur_rule)
 	for _str in recur_rule.split(";"):
 		if "RRULE:FREQ" in _str:
 			repeat_every = _str.split("=")[1]
@@ -132,11 +142,24 @@ def get_recurrence_event_fields_value(recur_rule, starts_on):
 			# get repeat till
 			date = datetime.strptime(starts_on, "%Y-%m-%d %H:%M:%S")
 			repeat_till = get_repeat_till_date(date, count=_str.split("=")[1], repeat_on=repeat_on)
+		elif "BYDAY" in _str:
+			days = _str.split("=")[1]
+			if repeat_on == "DAILY":
+				repeat_days.update({
+					"sunday": 1 if "SU" in days else 0,
+					"monday": 1 if "MO" in days else 0,
+					"tuesday": 1 if "TU" in days else 0,
+					"wednesday": 1 if "WD" in days else 0,
+					"thursday": 1 if "TU" in days else 0,
+					"friday": 1 if "TU" in days else 0,
+					"saturday": 1 if "TU" in days else 0,
+				})
 
 	return {
 		"repeat_on": repeat_on,
 		"repeat_till": repeat_till,
-		"repeat_this_event": 1
+		"repeat_this_event": 1,
+		"repeat_days": repeat_days
 	}
 
 def get_repeat_till_date(date, count=None, repeat_on=None):
@@ -150,9 +173,12 @@ def get_repeat_till_date(date, count=None, repeat_on=None):
 		elif repeat_on == "Every Month":
 			# add months
 			date = add_months(date, int(count))
-		else:
+		elif repeat_on == "Every Year":
 			# add years
 			date = add_months(date, int(count) * 12)
+		else:
+			# set default value
+			date = add_months(date, int(count))
 
 	return date.strftime("%Y-%m-%d")
 
@@ -163,7 +189,7 @@ def add_months(date, count):
 	year = date.year + month / 12
 	month = month % 12 + 1
 	day = min(date.day,calendar.monthrange(year,month)[1])
-	return datetime.date(year,month,day)
+	return datetime(year,month,day)
 
 def get_formatted_date(str_date):
 	# remove timezone from str_date
