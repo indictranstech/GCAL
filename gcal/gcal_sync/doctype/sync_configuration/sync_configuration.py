@@ -75,9 +75,10 @@ def get_oauth_keys(provider):
 
 	if not keys:
 		# try database
-		social = frappe.get_doc("Social Login Keys", "Social Login Keys")
+		# social = frappe.get_doc("Social Login Keys", "Social Login Keys")
+		social = frappe.get_doc("GCal Secret", "Gcal Secret")
 		keys = {}
-		for fieldname in ("client_id", "client_secret"):
+		for fieldname in ("client_id", "secret_key"):
 			value = social.get("{provider}_{fieldname}".format(provider="google", fieldname=fieldname))
 			if not value:
 				keys = {}
@@ -98,18 +99,25 @@ def sync_calender():
 
 	if not credentials or credentials.invalid:
 		url = get_oauth2_authorize_url('gcal')
-		return url
+		return {
+			"url":url,
+			"is_synced": False
+		}
+		# return url
 	else:
 		from gcal.tasks import sync_google_calendar
 		sync_google_calendar(credentials)
-		return None
+		return {
+			"url":None,
+			"is_synced": True
+		}
 
 @frappe.whitelist()
 def get_credentials(code):
 	if code:
 		params = get_oauth_keys('gcal')
 		params.update({
-			"scope": 'https://www.googleapis.com/auth/calendar.readonly',
+			"scope": 'https://www.googleapis.com/auth/calendar',
 			"redirect_uri": get_redirect_uri('gcal'),
 			"params": {
 				"approval_prompt":"force",
@@ -123,7 +131,8 @@ def get_credentials(code):
 		store = Storage('GCal', frappe.session.user)
 		store.put(credentials)
 		# get events and create new doctype
-		sync_events(credentials)
+		from gcal.tasks import sync_google_calendar
+		sync_google_calendar(credentials)
 	
 	frappe.local.response["type"] = "redirect"
 	frappe.local.response["location"] = "/desk#Calendar/Event"

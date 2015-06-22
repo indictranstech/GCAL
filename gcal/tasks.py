@@ -51,10 +51,13 @@ def sych_users_calender(users):
 def sync_google_calendar(credentials):
 	# get service object
 	# get all the events
-	events = get_gcal_events(credentials)
+	eventsResult = get_gcal_events(credentials)
+	events = eventsResult.get('items', [])
+
 	if not events:
 		frappe.msgprint("No Events to Sync")
 	else:
+		frappe.db.sql("""UPDATE `tabSync Configuration` SET time_zone='%s' WHERE name='%s'"""%(eventsResult.get("timeZone"), frappe.session.user))
 		for event in events:
 			# check if event alreay synced if exist update else create new event
 			e_name = is_event_already_exist(event)
@@ -69,7 +72,7 @@ def get_gcal_events(credentials):
 	eventsResult = service.events().list(
 		calendarId='primary', timeMin=now).execute()
 	events = eventsResult.get('items', [])
-	return events
+	return eventsResult
 
 def save_event(event):
 	e = frappe.new_doc("Event")

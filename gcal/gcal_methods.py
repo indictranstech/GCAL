@@ -8,7 +8,6 @@ from httplib2 import Http
 import oauth2client
 from oauth2client.client import Credentials
 from oauth2client.keyring_storage import Storage
-from frappe.utils import cstr
 
 def get_service_object():
 	# get google credentials from storage
@@ -51,7 +50,6 @@ def delete_gcal_event(doc, method):
 	service = get_service_object()
 	if doc.is_gcal_event and doc.gcal_id:
 		try:
-			frappe.errprint("in_delete")
 			service.events().delete(calendarId='primary', eventId=doc.gcal_id).execute()
 			frappe.msgprint("New Google Calender Event is deleted successfully")
 		except Exception, e:
@@ -99,10 +97,11 @@ def get_formatted_date(date):
 	if str_date.split(' ')[1] == "00:00:00":
 		return {'date': datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d")}
 	else:
+		timezone = frappe.db.get_value("Sync Configuration",frappe.session.user, "time_zone")
 		return {
 			# 'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30", 
 			'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S"),
-			'timeZone': 'Asia/Calcutta'
+			'timeZone': timezone
 		}
 
 def get_attendees(doc):
@@ -125,7 +124,20 @@ def get_attendees(doc):
 def get_recurrence_rule(doc):
 	until = datetime.strptime(doc.repeat_till, '%Y-%m-%d').strftime("%Y%m%dT%H%M%SZ")
 
-	if doc.repeat_on == "Every Day": return ["RRULE:FREQ=DAILY;UNTIL=%s"%(until)]
+	if doc.repeat_on == "Every Day": return ["RRULE:FREQ=DAILY;UNTIL=%s;BYDAY=%s"%(until,get_by_day_string(doc))]
 	elif doc.repeat_on == "Every Week": return ["RRULE:FREQ=WEEKLY;UNTIL=%s"%(until)]
 	elif doc.repeat_on == "Every Month": return ["RRULE:FREQ=MONTHLY;UNTIL=%s"%(until)]
 	else: return ["RRULE:FREQ=YEARLY;UNTIL=%s"%(until)]
+
+def get_by_day_string(doc):
+	# days = ["SU","MO","TU","WE","TH","FR","SA"]
+	by_days = []
+	if doc.sunday : by_days.append("SU")
+	if doc.monday : by_days.append("MO")
+	if doc.tuesday : by_days.append("TU")
+	if doc.wednesday : by_days.append("WE")
+	if doc.thursday : by_days.append("TH")
+	if doc.friday : by_days.append("FR")
+	if doc.saturday : by_days.append("SA")
+
+	return "%s" % ",".join(by_days)
