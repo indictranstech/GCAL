@@ -36,7 +36,6 @@ cur_frm.cscript.validate = function(){
 }
 
 cur_frm.cscript.onload = function(){
-	console.log("onload")
 	if(cur_frm.doc.is_sync)
 		hide_gcal_fields(cur_frm.doc.is_sync);
 	else
@@ -49,7 +48,4 @@ cur_frm.cscript.is_sync = function(doc){
 
 hide_gcal_fields = function(is_sync){
 	cur_frm.set_df_property("section_break_2", "hidden", is_sync == 0);
-	/*cur_frm.set_df_property("gmail_id", "hidden", is_sync == 0);
-	cur_frm.set_df_property("sync_options", "hidden", is_sync == 0);
-	cur_frm.set_df_property("sync_calender", "hidden", is_sync == 0);*/
 }
