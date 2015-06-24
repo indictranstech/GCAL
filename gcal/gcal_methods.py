@@ -32,6 +32,7 @@ def update_gcal_event(doc, method):
 		# update google calender event
 		event = get_google_event_dict(doc)
 		event = service.events().update(calendarId='primary', eventId=doc.gcal_id, body=event).execute()
+		
 		if event: frappe.msgprint("Google Calender Event is updated successfully") 
 	else:
 		# create new google calender event
@@ -46,37 +47,41 @@ def update_gcal_event(doc, method):
 			frappe.msgprint("New Google Calender Event is created successfully") 
 
 def delete_gcal_event(doc, method):
-	frappe.errprint("in delete_gcal_event")
 	service = get_service_object()
 	if doc.is_gcal_event and doc.gcal_id:
-		service.events().delete(calendarId='primary', eventId=doc.gcal_id).execute()
-		frappe.msgprint("New Google Calender Event is deleted successfully")
-
-		# redirect to event list
-		frappe.local.response["type"] = "redirect"
-		frappe.local.response["location"] = "/desk#List/Event"
+		try:
+			service.events().delete(calendarId='primary', eventId=doc.gcal_id).execute()
+			frappe.msgprint("New Google Calender Event is deleted successfully")
+		except Exception, e:
+			frappe.msgprint("Error occured while deleting google event\nDeleting Event from Frappe, Please delete the google event manually")
+			frappe.delete_doc("Event", doc.name)
+			frappe.msgprint("Event Deleted From Frappe")
+		finally:
+			# redirect to event list
+			frappe.local.response["type"] = "redirect"
+			frappe.local.response["location"] = "/desk#List/Event"
 
 def get_google_event_dict(doc):
+	import json
 	event = {
-		'summary': doc.subject,
-		'location': None,
-		'description': doc.description,
-		'start': get_gcal_date('start', doc),
-		'end': get_gcal_date('end', doc),
-		'recurrence':get_recurrence_rule(doc) if doc.repeat_this_event else [],
-		'attendees': get_attendees(),
-		'reminders':{
+		"summary": doc.subject,
+		"location": None,
+		"description": doc.description,
+		"start": get_gcal_date('start', doc),
+		"end": get_gcal_date('end', doc),
+		"recurrence":get_recurrence_rule(doc) if doc.repeat_this_event else [],
+		"attendees": get_attendees(doc),
+		"reminders":{
 			'useDefault':False,
 			'overrides': [
 				{'method': 'email','minutes':24 * 60}
 			]
 		}
 	}
+
 	return event
 
 def get_gcal_date(param, doc):
-	# ref 2015-06-22T11:00:00+05:30
-	# adjust date or dateTime param
 	gcal_date = {}
 	date = doc.starts_on if param == 'start' else doc.ends_on
 	
@@ -88,37 +93,51 @@ def get_gcal_date(param, doc):
 	return gcal_date
 
 def get_formatted_date(date):
-	list_date = date.split(' ')
-	if list_date[1] == "00:00:00":
-		date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d")
-		return {'date': date}
+	str_date = str(date) if isinstance(date, datetime) else date
+	if str_date.split(' ')[1] == "00:00:00":
+		return {'date': datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d")}
 	else:
-		date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30"	#replace with time zone
-		return {'dateTime':date}
+		timezone = frappe.db.get_value("Sync Configuration",frappe.session.user, "time_zone")
+		return {
+			# 'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30", 
+			'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S"),
+			'timeZone': timezone
+		}
 
-def get_attendees():
-	return []
+def get_attendees(doc):
+	email_ids = []
+	if doc.roles:
+		roles = []
+		
+		for doc in doc.roles:
+			roles.append(str(doc.role))
+		
+		condition = "('%s')" % "','".join(tuple(roles))
+
+		result_set = frappe.db.sql("""SELECT DISTINCT email FROM tabUser WHERE name <> '%s' AND name IN
+			(SELECT DISTINCT parent FROM tabUserRole WHERE role in %s)"""%(frappe.session.user, condition), as_dict=True)
+
+		email_ids = result_set if result_set else []
+
+	return email_ids
 
 def get_recurrence_rule(doc):
-	# frappe.errprint("in get_recurrence_rule")
-	# recur_rule = [
-	# 	'DTSTART;'+ get_gcal_date('start',doc),
-	# 	'DTEND';+ get_gcal_date('end',doc),
-	# 	'PRULE:FREQ='+ get_prule(doc) + ""
-	# ]
-	# return recur_rule
-	return []
+	until = datetime.strptime(doc.repeat_till, '%Y-%m-%d').strftime("%Y%m%dT%H%M%SZ")
 
-def get_repeat_on(doc):
-	repeat_on = doc.repeat_on
+	if doc.repeat_on == "Every Day": return ["RRULE:FREQ=DAILY;UNTIL=%s;BYDAY=%s"%(until,get_by_day_string(doc))]
+	elif doc.repeat_on == "Every Week": return ["RRULE:FREQ=WEEKLY;UNTIL=%s"%(until)]
+	elif doc.repeat_on == "Every Month": return ["RRULE:FREQ=MONTHLY;UNTIL=%s"%(until)]
+	else: return ["RRULE:FREQ=YEARLY;UNTIL=%s"%(until)]
 
-	if repeat_on == "Every Day": return "DAILY"
-	elif repeat_on == "Every Week": return "WEEKLY"
-	elif repeat_on == "Every Month": return "MONTHY"
-	else: return "YEARLY"
+def get_by_day_string(doc):
+	# days = ["SU","MO","TU","WE","TH","FR","SA"]
+	by_days = []
+	if doc.sunday : by_days.append("SU")
+	if doc.monday : by_days.append("MO")
+	if doc.tuesday : by_days.append("TU")
+	if doc.wednesday : by_days.append("WE")
+	if doc.thursday : by_days.append("TH")
+	if doc.friday : by_days.append("FR")
+	if doc.saturday : by_days.append("SA")
 
-# # Sync Google Calendar Events to Frappe Event
-
-def sync_google_events():
-	print "in sync_google_events"
-	service = get_service_object()
+	return "%s" % ",".join(by_days)

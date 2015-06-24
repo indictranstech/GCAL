@@ -75,9 +75,10 @@ def get_oauth_keys(provider):
 
 	if not keys:
 		# try database
-		social = frappe.get_doc("Social Login Keys", "Social Login Keys")
+		# social = frappe.get_doc("Social Login Keys", "Social Login Keys")
+		social = frappe.get_doc("GCal Secret", "Gcal Secret")
 		keys = {}
-		for fieldname in ("client_id", "client_secret"):
+		for fieldname in ("client_id", "secret_key"):
 			value = social.get("{provider}_{fieldname}".format(provider="google", fieldname=fieldname))
 			if not value:
 				keys = {}
@@ -98,17 +99,25 @@ def sync_calender():
 
 	if not credentials or credentials.invalid:
 		url = get_oauth2_authorize_url('gcal')
-		return url
+		return {
+			"url":url,
+			"is_synced": False
+		}
+		# return url
 	else:
-		sync_events(credentials)
-		return None
+		from gcal.tasks import sync_google_calendar
+		sync_google_calendar(credentials)
+		return {
+			"url":None,
+			"is_synced": True
+		}
 
 @frappe.whitelist()
 def get_credentials(code):
 	if code:
 		params = get_oauth_keys('gcal')
 		params.update({
-			"scope": 'https://www.googleapis.com/auth/calendar.readonly',
+			"scope": 'https://www.googleapis.com/auth/calendar',
 			"redirect_uri": get_redirect_uri('gcal'),
 			"params": {
 				"approval_prompt":"force",
@@ -118,81 +127,12 @@ def get_credentials(code):
 		})
 		flow = OAuth2WebServerFlow(**params)
 		credentials = flow.step2_exchange(code)
-		# Store Credentials in Storage
+		# Store Credentials in Keyring Storage
 		store = Storage('GCal', frappe.session.user)
 		store.put(credentials)
 		# get events and create new doctype
-		sync_events(credentials)
+		from gcal.tasks import sync_google_calendar
+		sync_google_calendar(credentials)
 	
 	frappe.local.response["type"] = "redirect"
 	frappe.local.response["location"] = "/desk#Calendar/Event"
-
-def sync_events(credentials):
-	events = get_gcal_events(credentials)
-	if not events:
-		frappe.msgprint("No Events to Sync")
-	else:
-		for event in events:
-			# check if event alreay synced if exist update else create new event
-			e_name = is_event_already_exist(event)
-			update_event(e_name, event) if e_name else save_event(event)
-
-def get_gcal_events(credentials):
-	now = datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-	service = build('calendar', 'v3', http=credentials.authorize(Http()))
-	eventsResult = service.events().list(
-		calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
-		orderBy='startTime').execute()
-	events = eventsResult.get('items', [])
-
-	return events
-
-def save_event(event):
-	e = frappe.new_doc("Event")
-	e = set_values(e, event)
-	e.save(ignore_permissions=True)
-	frappe.db.commit()
-
-def update_event(name, event):
-	e = frappe.get_doc("Event", name)
-	e = set_values(e, event)
-	e.save(ignore_permissions=True)
-	frappe.db.commit()
-
-def set_values(doc, event):
-	doc.subject = event.get('summary')
-
-	start_date = event['start'].get('dateTime', event['start'].get('date'))
-	end_date = event['end'].get('dateTime', event['start'].get('date'))
-
-	doc.starts_on = get_formatted_date(start_date)
-	doc.ends_on = get_formatted_date(end_date)
-	
-	doc.all_day = 1 if doc.starts_on == doc.ends_on else 0
-
-	if not event.get('visibility'):
-		doc.event_type = "Private"
-	else:
-		doc.event_type =  "Private" if event['visibility'] == "private" else "Public"
-
-	doc.description = event.get("description")
-	doc.is_gcal_event = 1
-	doc.event_owner = event.get("organizer").get("email")
-	doc.gcal_id = event.get("id")
-
-	return doc
-
-def get_formatted_date(str_date):
-	# Also format the date according to frappe date format
-	date_list = str_date.split("T")
-	date = None
-	
-	if len(date_list) == 1:
-		str_date = date_list[0] + "T00:00:00"
-	
-	date = datetime.strptime(str_date, '%Y-%m-%dT%H:%M:%S').strftime("%d-%m-%Y %H:%M:%S")
-	return datetime.strptime(date, "%d-%m-%Y %H:%M:%S")
-
-def is_event_already_exist(event):
-	name = frappe.db.get_value("Event",{"gcal_id":event.get("id")},"name")
-	return name
