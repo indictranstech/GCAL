@@ -45,13 +45,12 @@ oauth2_providers = {
 
 def get_oauth2_authorize_url(provider):
 	flow = get_oauth2_flow(provider)
-
 	# relative to absolute url
 	data = { "redirect_uri": get_redirect_uri(provider) }
 
 	# additional data if any
 	data.update(oauth2_providers[provider].get("auth_url_data", {}))
-	
+
 	return flow.get_authorize_url(**data)
 	# return flow.step1_get_authorize_url(**data)
 
@@ -78,13 +77,12 @@ def get_oauth_keys(provider):
 		# social = frappe.get_doc("Social Login Keys", "Social Login Keys")
 		social = frappe.get_doc("GCal Secret", "Gcal Secret")
 		keys = {}
-		for fieldname in ("client_id", "secret_key"):
-			value = social.get("{provider}_{fieldname}".format(provider="google", fieldname=fieldname))
+		for fieldname in ("client_id", "client_secret"):
+			value = social.get("{fieldname}".format(fieldname=fieldname))
 			if not value:
 				keys = {}
 				break
 			keys[fieldname] = value
-
 	return keys
 
 def get_redirect_uri(provider):
@@ -133,6 +131,6 @@ def get_credentials(code):
 		# get events and create new doctype
 		from gcal.tasks import sync_google_calendar
 		sync_google_calendar(credentials)
-	
+
 	frappe.local.response["type"] = "redirect"
 	frappe.local.response["location"] = "/desk#Calendar/Event"

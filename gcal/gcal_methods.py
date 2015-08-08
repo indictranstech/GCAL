@@ -32,8 +32,8 @@ def update_gcal_event(doc, method):
 		# update google calender event
 		event = get_google_event_dict(doc)
 		event = service.events().update(calendarId='primary', eventId=doc.gcal_id, body=event).execute()
-		
-		if event: frappe.msgprint("Google Calender Event is updated successfully") 
+
+		if event: frappe.msgprint("Google Calender Event is updated successfully")
 	else:
 		# create new google calender event
 		event = get_google_event_dict(doc)
@@ -41,10 +41,10 @@ def update_gcal_event(doc, method):
 
 		if event:
 			doc.is_gcal_event = 1
-			doc.event_owner = event.get("organizer").get("email")
+			# doc.event_owner = event.get("organizer").get("email")
 			doc.gcal_id = event.get("id")
 
-			frappe.msgprint("New Google Calender Event is created successfully") 
+			frappe.msgprint("New Google Calender Event is created successfully")
 
 def delete_gcal_event(doc, method):
 	service = get_service_object()
@@ -84,7 +84,7 @@ def get_google_event_dict(doc):
 def get_gcal_date(param, doc):
 	gcal_date = {}
 	date = doc.starts_on if param == 'start' else doc.ends_on
-	
+
 	if date:
 		gcal_date.update(get_formatted_date(date))
 	else:
@@ -99,7 +99,7 @@ def get_formatted_date(date):
 	else:
 		timezone = frappe.db.get_value("Sync Configuration",frappe.session.user, "time_zone")
 		return {
-			# 'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30", 
+			# 'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30",
 			'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S"),
 			'timeZone': timezone
 		}
@@ -108,10 +108,10 @@ def get_attendees(doc):
 	email_ids = []
 	if doc.roles:
 		roles = []
-		
+
 		for doc in doc.roles:
 			roles.append(str(doc.role))
-		
+
 		condition = "('%s')" % "','".join(tuple(roles))
 
 		result_set = frappe.db.sql("""SELECT DISTINCT email FROM tabUser WHERE name <> '%s' AND name IN
