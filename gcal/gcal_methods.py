@@ -8,16 +8,18 @@ from httplib2 import Http
 import oauth2client
 from oauth2client.client import Credentials
 from oauth2client.keyring_storage import Storage
+from gcal.gcal_sync.doctype.sync_configuration.sync_configuration import sync_calender
 
 def get_service_object():
 	# get google credentials from storage
 	service = None
 	store = Storage('GCal', frappe.session.user)
 	credentials = store.get()
-
+	frappe.errprint(credentials)
 	if not credentials or credentials.invalid:
 		# get credentials
 		frappe.throw("Invalid Credentials")
+		# sync_calender()
 	else:
 		service = build('calendar', 'v3', http=credentials.authorize(Http()))
 
@@ -63,12 +65,13 @@ def delete_gcal_event(doc, method):
 
 def get_google_event_dict(doc):
 	import json
+	start_date, end_date = get_gcal_date(doc.starts_on, doc.ends_on, doc.all_day)
 	event = {
 		"summary": doc.subject,
 		"location": None,
 		"description": doc.description,
-		"start": get_gcal_date('start', doc),
-		"end": get_gcal_date('end', doc),
+		"start": start_date,
+		"end": end_date,
 		"recurrence":get_recurrence_rule(doc) if doc.repeat_this_event else [],
 		"attendees": get_attendees(doc),
 		"reminders":{
@@ -78,26 +81,25 @@ def get_google_event_dict(doc):
 			]
 		}
 	}
-
+	frappe.errprint(event)
 	return event
 
-def get_gcal_date(param, doc):
+def get_gcal_date(starts_on, ends_on=None, is_all_day=0):
 	gcal_date = {}
-	date = doc.starts_on if param == 'start' else doc.ends_on
+	gcal_starts_on = get_formatted_date(starts_on, is_all_day)
+	gcal_ends_on = get_formatted_date(ends_on if ends_on else starts_on, is_all_day)
 
-	if date:
-		gcal_date.update(get_formatted_date(date))
-	else:
-		if param == "end": gcal_date.update(get_formatted_date(doc.starts_on))
+	return gcal_starts_on, gcal_ends_on
 
-	return gcal_date
-
-def get_formatted_date(date):
+def get_formatted_date(date, is_all_day=0):
 	str_date = str(date) if isinstance(date, datetime) else date
-	if str_date.split(' ')[1] == "00:00:00":
+	if is_all_day:
 		return {'date': datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d")}
 	else:
 		timezone = frappe.db.get_value("Sync Configuration",frappe.session.user, "time_zone")
+		if not timezone: 
+			timezone = frappe.db.get_value("System Settings", None, "time_zone")
+
 		return {
 			# 'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30",
 			'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S"),

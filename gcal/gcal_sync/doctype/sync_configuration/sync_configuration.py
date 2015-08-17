@@ -62,28 +62,22 @@ def get_oauth2_flow(provider):
 
 	# additional params for getting the flow
 	params.update(oauth2_providers[provider]["flow_params"])
+	
 	# and we have setup the communication lines
 	return OAuth2Service(**params)
-	# return OAuth2WebServerFlow(client_id=params['client_id'],client_secret=params['client_secret'],scope="https://www.googleapis.com/auth/calendar",redirect_uri=get_redirect_uri('gcal'))
+	
 
 def get_oauth_keys(provider):
 	"""get client_id and client_secret from database or conf"""
 
-	# try conf
-	keys = frappe.conf.get("{provider}_login".format(provider=provider))
-
-	if not keys:
-		# try database
-		# social = frappe.get_doc("Social Login Keys", "Social Login Keys")
-		social = frappe.get_doc("GCal Secret", "Gcal Secret")
-		keys = {}
-		for fieldname in ("client_id", "client_secret"):
-			value = social.get("{fieldname}".format(fieldname=fieldname))
-			if not value:
-				keys = {}
-				break
-			keys[fieldname] = value
-	return keys
+	social = frappe.get_doc("GCal Secret", "Gcal Secret")
+	if not social:
+		frappe.throws("Please set Client Id and Client Secret.")
+	else:           
+		return {
+			"client_id":social.client_id,
+			"client_secret":social.client_secret
+		}
 
 def get_redirect_uri(provider):
 	redirect_uri = oauth2_providers[provider]["redirect_uri"]
@@ -101,7 +95,6 @@ def sync_calender():
 			"url":url,
 			"is_synced": False
 		}
-		# return url
 	else:
 		from gcal.tasks import sync_google_calendar
 		sync_google_calendar(credentials)
