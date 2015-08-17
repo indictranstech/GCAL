@@ -15,7 +15,6 @@ def get_service_object():
 	service = None
 	store = Storage('GCal', frappe.session.user)
 	credentials = store.get()
-	frappe.errprint(credentials)
 	if not credentials or credentials.invalid:
 		# get credentials
 		frappe.throw("Invalid Credentials")
@@ -101,7 +100,6 @@ def get_formatted_date(date, is_all_day=0):
 			timezone = frappe.db.get_value("System Settings", None, "time_zone")
 
 		return {
-			# 'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S") + "+05:30",
 			'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S"),
 			'timeZone': timezone
 		}
