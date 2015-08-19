@@ -60,32 +60,45 @@ def get_oauth2_flow(provider):
 
 	# get client_id and client_secret
 	params = get_oauth_keys(provider)
-
+	
 	# additional params for getting the flow
 	params.update(oauth2_providers[provider]["flow_params"])
 	# and we have setup the communication lines
+
 	return OAuth2Service(**params)
 	# return OAuth2WebServerFlow(client_id=params['client_id'],client_secret=params['client_secret'],scope="https://www.googleapis.com/auth/calendar",redirect_uri=get_redirect_uri('gcal'))
 
-def get_oauth_keys(provider):
+# def get_oauth_keys(provider):
+# 	"""get client_id and client_secret from database or conf"""
+
+# 	# try conf
+# 	keys = frappe.conf.get("{provider}_login".format(provider=provider))
+
+# 	if not keys:
+# 		# try database
+# 		# social = frappe.get_doc("Social Login Keys", "Social Login Keys")
+# 		social = frappe.get_doc("GCal Secret", "Gcal Secret")
+# 		keys = {}
+# 		for fieldname in ("client_id", "secret_key"):
+# 			value = social.get("{provider}_{fieldname}".format(provider="google", fieldname=fieldname))
+# 			if not value:
+# 				keys = {}
+# 				break
+# 			keys[fieldname] = value
+
+# 	return keys
+
+def get_oauth_keys(provider):	
 	"""get client_id and client_secret from database or conf"""
 
-	# try conf
-	keys = frappe.conf.get("{provider}_login".format(provider=provider))
-
-	if not keys:
-		# try database
-		# social = frappe.get_doc("Social Login Keys", "Social Login Keys")
-		social = frappe.get_doc("GCal Secret", "Gcal Secret")
-		keys = {}
-		for fieldname in ("client_id", "secret_key"):
-			value = social.get("{provider}_{fieldname}".format(provider="google", fieldname=fieldname))
-			if not value:
-				keys = {}
-				break
-			keys[fieldname] = value
-
-	return keys
+	social = frappe.get_doc("GCal Secret", "Gcal Secret")
+	if not social:
+		frappe.throws("please set client Id and client secret\nPlease contact system manager")
+	else:	
+		return {
+			"client_id":social.client_id,
+			"client_secret":social.secret_key
+		}
 
 def get_redirect_uri(provider):
 	redirect_uri = oauth2_providers[provider]["redirect_uri"]
@@ -95,6 +108,7 @@ def get_redirect_uri(provider):
 def sync_calender():
 	# check storage for credentials
 	store = Storage('GCal', frappe.session.user)
+	# store = Storage('GCal', "makarand")
 	credentials = store.get()
 
 	if not credentials or credentials.invalid:

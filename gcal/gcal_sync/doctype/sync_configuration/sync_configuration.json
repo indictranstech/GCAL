@@ -140,7 +140,7 @@
  "is_submittable": 0, 
  "issingle": 0, 
  "istable": 0, 
- "modified": "2015-06-22 12:38:00.658560", 
+ "modified": "2015-07-03 19:31:20.689520", 
  "modified_by": "Administrator", 
  "module": "GCal Sync", 
  "name": "Sync Configuration", 
@@ -149,7 +149,7 @@
  "permissions": [
   {
    "amend": 0, 
-   "apply_user_permissions": 0, 
+   "apply_user_permissions": 1, 
    "cancel": 0, 
    "create": 1, 
    "delete": 1, 
