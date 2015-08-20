@@ -87,6 +87,7 @@ def update_event(name, event):
 	frappe.db.commit()
 
 def set_values(doc, event):
+	# frappe.errprint(event)
 	doc.subject = event.get('summary')
 
 	start_date = event['start'].get('dateTime', event['start'].get('date'))
@@ -102,68 +103,85 @@ def set_values(doc, event):
 	else:
 		doc.event_type =  "Private" if event['visibility'] == "private" else "Public"
 
-	recurrence_details = get_recurrence_event_fields_value(event.get("recurrence")[0], doc.starts_on) if event.get("recurrence") else {}
-	if recurrence_details:
-		doc.repeat_this_event = recurrence_details.get("repeat_this_event")
-		doc.repeat_on = recurrence_details.get("repeat_on")
-		doc.repeat_till = recurrence_details.get("repeat_till")
-		# setting up the repeat days
-		if recurrence_details.get("repeat_days"):
-			days = recurrence_details.get("repeat_days")
-			doc.sunday = days.get("sunday")
-			doc.monday = days.get("monday")
-			doc.tuesday = days.get("tuesday")
-			doc.wednesday = days.get("wednesday")
-			doc.thursday = days.get("thursday")
-			doc.friday = days.get("friday")
-			doc.saturday = days.get("saturday")
+	""" Recurring Event, not implemented."""
+	# recurrence_details = get_recurrence_event_fields_value(event.get("recurrence")[0], doc.starts_on) if event.get("recurrence") else {}
+	# # frappe.errprint(recurrence_details)
+	# if recurrence_details:
+	# 	doc.repeat_this_event = recurrence_details.get("repeat_this_event")
+	# 	doc.repeat_on = recurrence_details.get("repeat_on")
+	# 	doc.repeat_till = recurrence_details.get("repeat_till")
+	# 	# setting up the repeat days
+	# 	if recurrence_details.get("repeat_days"):
+	# 		days = recurrence_details.get("repeat_days")
+	# 		doc.sunday = days.get("sunday")
+	# 		doc.monday = days.get("monday")
+	# 		doc.tuesday = days.get("tuesday")
+	# 		doc.wednesday = days.get("wednesday")
+	# 		doc.thursday = days.get("thursday")
+	# 		doc.friday = days.get("friday")
+	# 		doc.saturday = days.get("saturday")
 	
 	doc.description = event.get("description")
 	doc.is_gcal_event = 1
 	doc.event_owner = event.get("organizer").get("email")
 	doc.gcal_id = event.get("id")
+	add_attendees(doc, event)
 
 	return doc
 
-def get_recurrence_event_fields_value(recur_rule, starts_on):
-	repeat_on = ""
-	repeat_till = get_repeat_till_date(datetime.strptime(starts_on, "%Y-%m-%d %H:%M:%S"), 3)	# setting default repeat for 3 month
-	repeat_days = {}
-	# get recurrence rule from string
-	for _str in recur_rule.split(";"):
-		if "RRULE:FREQ" in _str:
-			repeat_every = _str.split("=")[1]
-			if repeat_every == "DAILY": repeat_on = "Every Day"
-			elif repeat_every == "WEEKLY": repeat_on = "Every Week"
-			elif repeat_every == "MONTHLY": repeat_on = "Every Month"
-			else: repeat_on = "Every Year"
-		elif "UNTIL" in _str:
-			# get repeat till
-			date = datetime.strptime(_str.split("=")[1], "%Y%m%dT%H%M%SZ")
-			repeat_till = get_repeat_till_date(date)
-		elif "COUNT" in _str:
-			# get repeat till
-			date = datetime.strptime(starts_on, "%Y-%m-%d %H:%M:%S")
-			repeat_till = get_repeat_till_date(date, count=_str.split("=")[1], repeat_on=repeat_on)
-		elif "BYDAY" in _str:
-			days = _str.split("=")[1]
-			if repeat_on == "DAILY":
-				repeat_days.update({
-					"sunday": 1 if "SU" in days else 0,
-					"monday": 1 if "MO" in days else 0,
-					"tuesday": 1 if "TU" in days else 0,
-					"wednesday": 1 if "WD" in days else 0,
-					"thursday": 1 if "TU" in days else 0,
-					"friday": 1 if "TU" in days else 0,
-					"saturday": 1 if "TU" in days else 0,
-				})
+def add_attendees(doc, event):
+	att = []
+	event_attendees = ""
+	if event.get("attendees"):
+		for attendee in event.get("attendees"):
+			
+			att.append({"email": attendee.get("email")})
+			event_attendees += "%s : %s \n"%(attendee.get("displayName") or "Name", attendee.get("email"))
+	
+	doc.set("roles",[])
+	ch = doc.append('roles', {})
+	ch.attendees = str(att)
+	ch.event_attendees = str(event_attendees)
 
-	return {
-		"repeat_on": repeat_on,
-		"repeat_till": repeat_till,
-		"repeat_this_event": 1,
-		"repeat_days": repeat_days
-	}
+# def get_recurrence_event_fields_value(recur_rule, starts_on):
+# 	repeat_on = ""
+# 	repeat_till = get_repeat_till_date(datetime.strptime(starts_on, "%Y-%m-%d %H:%M:%S"), 3)	# setting default repeat for 3 month
+# 	repeat_days = {}
+# 	# get recurrence rule from string
+# 	for _str in recur_rule.split(";"):
+# 		if "RRULE:FREQ" in _str:
+# 			repeat_every = _str.split("=")[1]
+# 			if repeat_every == "DAILY": repeat_on = "Every Day"
+# 			elif repeat_every == "WEEKLY": repeat_on = "Every Week"
+# 			elif repeat_every == "MONTHLY": repeat_on = "Every Month"
+# 			else: repeat_on = "Every Year"
+# 		elif "UNTIL" in _str:
+# 			# get repeat till
+# 			date = datetime.strptime(_str.split("=")[1], "%Y%m%dT%H%M%SZ")
+# 			repeat_till = get_repeat_till_date(date)
+# 		elif "COUNT" in _str:
+# 			# get repeat till
+# 			date = datetime.strptime(starts_on, "%Y-%m-%d %H:%M:%S")
+# 			repeat_till = get_repeat_till_date(date, count=_str.split("=")[1], repeat_on=repeat_on)
+# 		elif "BYDAY" in _str:
+# 			days = _str.split("=")[1]
+# 			if repeat_on == "DAILY":
+# 				repeat_days.update({
+# 					"sunday": 1 if "SU" in days else 0,
+# 					"monday": 1 if "MO" in days else 0,
+# 					"tuesday": 1 if "TU" in days else 0,
+# 					"wednesday": 1 if "WD" in days else 0,
+# 					"thursday": 1 if "TU" in days else 0,
+# 					"friday": 1 if "TU" in days else 0,
+# 					"saturday": 1 if "TU" in days else 0,
+# 				})
+
+# 	return {
+# 		"repeat_on": repeat_on,
+# 		"repeat_till": repeat_till,
+# 		"repeat_this_event": 1,
+# 		"repeat_days": repeat_days
+# 	}
 
 def get_repeat_till_date(date, count=None, repeat_on=None):
 	if count:

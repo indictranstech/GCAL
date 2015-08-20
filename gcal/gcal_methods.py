@@ -18,7 +18,6 @@ def get_service_object():
 	if not credentials or credentials.invalid:
 		# get credentials
 		frappe.throw("Invalid Credentials")
-		# sync_calender()
 	else:
 		service = build('calendar', 'v3', http=credentials.authorize(Http()))
 
@@ -42,9 +41,7 @@ def update_gcal_event(doc, method):
 
 		if event:
 			doc.is_gcal_event = 1
-			# doc.event_owner = event.get("organizer").get("email")
 			doc.gcal_id = event.get("id")
-
 			frappe.msgprint("New Google Calender Event is created successfully")
 
 def delete_gcal_event(doc, method):
@@ -80,7 +77,6 @@ def get_google_event_dict(doc):
 			]
 		}
 	}
-	frappe.errprint(event)
 	return event
 
 def get_gcal_date(starts_on, ends_on=None, is_all_day=0):
@@ -105,39 +101,49 @@ def get_formatted_date(date, is_all_day=0):
 		}
 
 def get_attendees(doc):
+	import json
 	email_ids = []
 	if doc.roles:
-		roles = []
+		roles, attendees = [], []
 
 		for doc in doc.roles:
-			roles.append(str(doc.role))
+			if doc.role:
+				roles.append(str(doc.role))
+			if doc.attendees:
+				attendees.extend(eval(doc.attendees))
 
-		condition = "('%s')" % "','".join(tuple(roles))
+		if roles:
+			condition = "('%s')" % "','".join(tuple(roles))
 
-		result_set = frappe.db.sql("""SELECT DISTINCT email FROM tabUser WHERE name <> '%s' AND name IN
-			(SELECT DISTINCT parent FROM tabUserRole WHERE role in %s)"""%(frappe.session.user, condition), as_dict=True)
+			result_set = frappe.db.sql("""SELECT DISTINCT email FROM tabUser WHERE name <> '%s' AND name IN
+				(SELECT DISTINCT parent FROM tabUserRole WHERE role in %s)"""%(frappe.session.user, condition), as_dict=True)
 
-		email_ids = result_set if result_set else []
+			email_ids = result_set if result_set else []
+
+		if attendees:
+			email_ids.extend(attendees)
 
 	return email_ids
 
 def get_recurrence_rule(doc):
-	until = datetime.strptime(doc.repeat_till, '%Y-%m-%d').strftime("%Y%m%dT%H%M%SZ")
+	"""Recurring Event not implemeted."""
+	# until = datetime.strptime(doc.repeat_till, '%Y-%m-%d').strftime("%Y%m%dT%H%M%SZ")
 
-	if doc.repeat_on == "Every Day": return ["RRULE:FREQ=DAILY;UNTIL=%s;BYDAY=%s"%(until,get_by_day_string(doc))]
-	elif doc.repeat_on == "Every Week": return ["RRULE:FREQ=WEEKLY;UNTIL=%s"%(until)]
-	elif doc.repeat_on == "Every Month": return ["RRULE:FREQ=MONTHLY;UNTIL=%s"%(until)]
-	else: return ["RRULE:FREQ=YEARLY;UNTIL=%s"%(until)]
+	# if doc.repeat_on == "Every Day": return ["RRULE:FREQ=DAILY;UNTIL=%s;BYDAY=%s"%(until,get_by_day_string(doc))]
+	# elif doc.repeat_on == "Every Week": return ["RRULE:FREQ=WEEKLY;UNTIL=%s"%(until)]
+	# elif doc.repeat_on == "Every Month": return ["RRULE:FREQ=MONTHLY;UNTIL=%s"%(until)]
+	# else: return ["RRULE:FREQ=YEARLY;UNTIL=%s"%(until)]
+	return []
 
-def get_by_day_string(doc):
-	# days = ["SU","MO","TU","WE","TH","FR","SA"]
-	by_days = []
-	if doc.sunday : by_days.append("SU")
-	if doc.monday : by_days.append("MO")
-	if doc.tuesday : by_days.append("TU")
-	if doc.wednesday : by_days.append("WE")
-	if doc.thursday : by_days.append("TH")
-	if doc.friday : by_days.append("FR")
-	if doc.saturday : by_days.append("SA")
+# def get_by_day_string(doc):
+# 	# days = ["SU","MO","TU","WE","TH","FR","SA"]
+# 	by_days = []
+# 	if doc.sunday : by_days.append("SU")
+# 	if doc.monday : by_days.append("MO")
+# 	if doc.tuesday : by_days.append("TU")
+# 	if doc.wednesday : by_days.append("WE")
+# 	if doc.thursday : by_days.append("TH")
+# 	if doc.friday : by_days.append("FR")
+# 	if doc.saturday : by_days.append("SA")
 
-	return "%s" % ",".join(by_days)
+# 	return "%s" % ",".join(by_days)
