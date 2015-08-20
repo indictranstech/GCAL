@@ -66,9 +66,6 @@ def sync_google_calendar(credentials):
 def get_gcal_events(credentials):
 	now = datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
 	service = build('calendar', 'v3', http=credentials.authorize(Http()))
-	# eventsResult = service.events().list(
-	# 	calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
-	# 	orderBy='startTime').execute()
 	eventsResult = service.events().list(
 		calendarId='primary', timeMin=now).execute()
 	events = eventsResult.get('items', [])
