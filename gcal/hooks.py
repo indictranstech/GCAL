@@ -8,7 +8,7 @@ app_description = "Sync Google Calender"
 app_icon = "icon-calendar"
 app_color = "blue"
 app_email = "makarand.b@indictranstech.com"
-app_version = "0.0.1"
+app_version = "1.0.0"
 
 # Includes in <head>
 # ------------------
