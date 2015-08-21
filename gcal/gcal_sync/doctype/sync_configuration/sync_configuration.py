@@ -59,25 +59,26 @@ def get_oauth2_flow(provider):
 
 	# get client_id and client_secret
 	params = get_oauth_keys(provider)
-	
+
 	# additional params for getting the flow
 	params.update(oauth2_providers[provider]["flow_params"])
-	
+
 	# and we have setup the communication lines
 
 	return OAuth2Service(**params)
-	
-def get_oauth_keys(provider):	
+
+def get_oauth_keys(provider):
 	"""get client_id and client_secret from database or conf"""
 
 	social = frappe.get_doc("GCal Secret", "Gcal Secret")
-	if not social:
-		frappe.throws("Please set Client Id and Client Secret.")
-	else:           
+
+	if social.client_id and social.client_secret:
 		return {
 			"client_id":social.client_id,
 			"client_secret":social.client_secret
 		}
+	else:
+		frappe.throws("Please set Client Id and Client Secret.")
 
 def get_redirect_uri(provider):
 	redirect_uri = oauth2_providers[provider]["redirect_uri"]

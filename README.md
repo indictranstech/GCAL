@@ -9,14 +9,14 @@ Features:
 
 ###Depends on
 - frappe (To install: [bench page](https://github.com/frappe/bench) )
-- erpnext
 - python module: oauth2client, gdata, google-api-python-client, keyring
- 
+
 ###Installation
-Note: Conpatible with frappe 5 and above.
+Note: Compatible with frappe 5 and above.
 
 1. bench get-app gcal [https://github.com/indictranstech/GCAL.git](https://github.com/indictranstech/GCAL.git)
-2. bench install_app gcal or install from frappe desk installer.
+2. bench install_app gcal<br>or install from frappe desk installer.
+3. bench migrate
 
 
 ###Configuration Steps
@@ -31,12 +31,12 @@ Note: Conpatible with frappe 5 and above.
 More on google developer console, [Google Developer Console](https://developers.google.com/console/help/new/)
 
 ####Setup Google Calendar API credentials
-<br> <b> Goto GCal Sync > GCal Secret : </b>  Set Client Id and Client Secret 
+<br> <b> Goto GCal Sync > GCal Secret : </b>  Set Client Id and Client Secret
 ![GCal Sync > GCal Secret](gcal/public/images/GcalSecret.png)
 
 ####Setup individual profile
-<br> 
-1. Login with own frappe user credentials 
-2. Goto, Gcal Sync > Sync Configuration List > Create New Record. 
+<br>
+1. Login with own frappe user credentials
+2. Goto, Gcal Sync > Sync Configuration List > Create New Record.
 
 ![Gcal Sync > Sync Configuration List > Create New Record](gcal/public/images/SyncConfig.png)
