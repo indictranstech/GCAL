@@ -30,10 +30,11 @@ def update_gcal_event(doc, method):
 
 	if doc.is_gcal_event and doc.gcal_id:
 		# update google calender event
-		event = get_google_event_dict(doc)
-		event = service.events().update(calendarId='primary', eventId=doc.gcal_id, body=event).execute()
+		if not (doc.modified == doc.creation):
+			event = get_google_event_dict(doc)
+			event = service.events().update(calendarId='primary', eventId=doc.gcal_id, body=event).execute()
 
-		if event: frappe.msgprint("Google Calender Event is updated successfully")
+			if event: frappe.msgprint("Google Calender Event is updated successfully")
 	else:
 		# create new google calender event
 		event = get_google_event_dict(doc)
@@ -92,7 +93,7 @@ def get_formatted_date(date, is_all_day=0):
 		return {'date': datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%d")}
 	else:
 		timezone = frappe.db.get_value("Sync Configuration",frappe.session.user, "time_zone")
-		if not timezone: 
+		if not timezone:
 			timezone = frappe.db.get_value("System Settings", None, "time_zone")
 
 		return {
