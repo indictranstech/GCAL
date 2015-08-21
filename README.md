@@ -32,11 +32,11 @@ More on google developer console, [Google Developer Console](https://developers.
 
 ####Setup Google Calendar API credentials
 <br> <b> Goto GCal Sync > GCal Secret : </b>  Set Client Id and Client Secret 
-![GCal Sync > GCal Secret](frappe_ldap/public/images/GcalSecret.png)
+![GCal Sync > GCal Secret](gcal/public/images/GcalSecret.png)
 
 ####Setup individual profile
 <br> 
 1. Login with own frappe user credentials 
 2. Goto, Gcal Sync > Sync Configuration List > Create New Record. 
 
-![Gcal Sync > Sync Configuration List > Create New Record](frappe_ldap/public/images/SyncConfig.png)
+![Gcal Sync > Sync Configuration List > Create New Record](gcal/public/images/SyncConfig.png)
