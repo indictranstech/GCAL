@@ -45,13 +45,12 @@ oauth2_providers = {
 
 def get_oauth2_authorize_url(provider):
 	flow = get_oauth2_flow(provider)
-
 	# relative to absolute url
 	data = { "redirect_uri": get_redirect_uri(provider) }
 
 	# additional data if any
 	data.update(oauth2_providers[provider].get("auth_url_data", {}))
-	
+
 	return flow.get_authorize_url(**data)
 	# return flow.step1_get_authorize_url(**data)
 
@@ -63,41 +62,21 @@ def get_oauth2_flow(provider):
 	
 	# additional params for getting the flow
 	params.update(oauth2_providers[provider]["flow_params"])
+	
 	# and we have setup the communication lines
 
 	return OAuth2Service(**params)
-	# return OAuth2WebServerFlow(client_id=params['client_id'],client_secret=params['client_secret'],scope="https://www.googleapis.com/auth/calendar",redirect_uri=get_redirect_uri('gcal'))
-
-# def get_oauth_keys(provider):
-# 	"""get client_id and client_secret from database or conf"""
-
-# 	# try conf
-# 	keys = frappe.conf.get("{provider}_login".format(provider=provider))
-
-# 	if not keys:
-# 		# try database
-# 		# social = frappe.get_doc("Social Login Keys", "Social Login Keys")
-# 		social = frappe.get_doc("GCal Secret", "Gcal Secret")
-# 		keys = {}
-# 		for fieldname in ("client_id", "secret_key"):
-# 			value = social.get("{provider}_{fieldname}".format(provider="google", fieldname=fieldname))
-# 			if not value:
-# 				keys = {}
-# 				break
-# 			keys[fieldname] = value
-
-# 	return keys
-
+	
 def get_oauth_keys(provider):	
 	"""get client_id and client_secret from database or conf"""
 
 	social = frappe.get_doc("GCal Secret", "Gcal Secret")
 	if not social:
-		frappe.throws("please set client Id and client secret\nPlease contact system manager")
-	else:	
+		frappe.throws("Please set Client Id and Client Secret.")
+	else:           
 		return {
 			"client_id":social.client_id,
-			"client_secret":social.secret_key
+			"client_secret":social.client_secret
 		}
 
 def get_redirect_uri(provider):
@@ -117,7 +96,6 @@ def sync_calender():
 			"url":url,
 			"is_synced": False
 		}
-		# return url
 	else:
 		from gcal.tasks import sync_google_calendar
 		sync_google_calendar(credentials)
@@ -147,6 +125,6 @@ def get_credentials(code):
 		# get events and create new doctype
 		from gcal.tasks import sync_google_calendar
 		sync_google_calendar(credentials)
-	
+
 	frappe.local.response["type"] = "redirect"
 	frappe.local.response["location"] = "/desk#Calendar/Event"

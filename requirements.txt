@@ -1,1 +1,6 @@
 frappe
+erpnext
+oauth2client
+gdata
+google-api-python-client
+keyring
