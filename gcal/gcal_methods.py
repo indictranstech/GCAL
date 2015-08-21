@@ -54,7 +54,6 @@ def delete_gcal_event(doc, method):
 		except Exception, e:
 			frappe.msgprint("Error occured while deleting google event\nDeleting Event from Frappe, Please delete the google event manually")
 			frappe.delete_doc("Event", doc.name)
-			frappe.msgprint("Event Deleted From Frappe")
 		finally:
 			# redirect to event list
 			frappe.local.response["type"] = "redirect"

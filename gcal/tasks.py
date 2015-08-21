@@ -10,7 +10,7 @@ from oauth2client.client import Credentials
 from oauth2client.keyring_storage import Storage
 
 def sync_all():
-	# get the list of user with 
+	# get the list of user with
 	users = get_users_by_sync_optios('Hourly')
 	sych_users_calender(users)
 
@@ -79,9 +79,11 @@ def save_event(event):
 
 def update_event(name, event):
 	e = frappe.get_doc("Event", name)
-	e = set_values(e, event)
-	e.save(ignore_permissions=True)
-	frappe.db.commit()
+
+	if e.modified != get_formatted_updated_date(event['updated']):
+		e = set_values(e, event)
+		e.save(ignore_permissions=True)
+		frappe.db.commit()
 
 def set_values(doc, event):
 	# frappe.errprint(event)
@@ -117,7 +119,7 @@ def set_values(doc, event):
 	# 		doc.thursday = days.get("thursday")
 	# 		doc.friday = days.get("friday")
 	# 		doc.saturday = days.get("saturday")
-	
+
 	doc.description = event.get("description")
 	doc.is_gcal_event = 1
 	doc.event_owner = event.get("organizer").get("email")
@@ -131,10 +133,10 @@ def add_attendees(doc, event):
 	event_attendees = ""
 	if event.get("attendees"):
 		for attendee in event.get("attendees"):
-			
+
 			att.append({"email": attendee.get("email")})
 			event_attendees += "%s : %s \n"%(attendee.get("displayName") or "Name", attendee.get("email"))
-	
+
 	doc.set("roles",[])
 	ch = doc.append('roles', {})
 	ch.attendees = str(att)
@@ -202,7 +204,7 @@ def get_repeat_till_date(date, count=None, repeat_on=None):
 
 def add_months(date, count):
 	import calendar
-	
+
 	month = date.month - 1 + count
 	year = date.year + month / 12
 	month = month % 12 + 1
@@ -213,14 +215,18 @@ def get_formatted_date(str_date):
 	# remove timezone from str_date
 	str_date = str_date.split("+")[0]
 	date = None
-	
+
 	date_list = str_date.split("T")
 	if len(date_list) == 1:
 		str_date = date_list[0] + "T00:00:00"
-	
+
 	date = datetime.strptime(str_date, '%Y-%m-%dT%H:%M:%S').strftime("%Y-%m-%d %H:%M:%S")
 	return date
 
 def is_event_already_exist(event):
 	name = frappe.db.get_value("Event",{"gcal_id":event.get("id")},"name")
 	return name
+
+def get_formatted_updated_date(str_date):
+	""" converting 2015-08-21T13:11:39.335Z string date to datetime """
+	return datetime.strptime(str_date, "%Y-%m-%dT%H:%M:%S.%fZ")
