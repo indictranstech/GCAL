@@ -15,7 +15,7 @@ Features:
 Note: Compatible with frappe 5 and above.
 
 1. bench get-app gcal [https://github.com/indictranstech/GCAL.git](https://github.com/indictranstech/GCAL.git)
-2. bench install_app gcal<br>or install from frappe desk installer.
+2. bench install-app gcal<br>or install from frappe desk installer.
 3. bench migrate
 
 
