@@ -178,7 +178,7 @@
  "in_dialog": 0, 
  "is_submittable": 0, 
  "issingle": 0, 
- "istable": 0, 
+ "istable": 0,
  "modified": "2015-08-17 20:46:33.860140", 
  "modified_by": "Administrator", 
  "module": "GCal Sync", 

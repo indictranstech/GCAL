@@ -19,6 +19,8 @@ cur_frm.cscript.validate = function(){
 	if (doc.gmail_id){
 		if(doc.is_sync)
 			return frappe.call({
+				freeze:true,
+				freeze_message:"Syncing Events",
 				method:"gcal.gcal_sync.doctype.sync_configuration.sync_configuration.sync_calender",
 				callback: function(r){
 					if (r.message)

@@ -62,22 +62,23 @@ def get_oauth2_flow(provider):
 
 	# additional params for getting the flow
 	params.update(oauth2_providers[provider]["flow_params"])
-	
+
 	# and we have setup the communication lines
+
 	return OAuth2Service(**params)
-	
 
 def get_oauth_keys(provider):
 	"""get client_id and client_secret from database or conf"""
 
 	social = frappe.get_doc("GCal Secret", "Gcal Secret")
-	if not social:
-		frappe.throws("Please set Client Id and Client Secret.")
-	else:           
+
+	if social.client_id and social.client_secret:
 		return {
 			"client_id":social.client_id,
 			"client_secret":social.client_secret
 		}
+	else:
+		frappe.throws("Please set Client Id and Client Secret.")
 
 def get_redirect_uri(provider):
 	redirect_uri = oauth2_providers[provider]["redirect_uri"]
@@ -87,6 +88,7 @@ def get_redirect_uri(provider):
 def sync_calender():
 	# check storage for credentials
 	store = Storage('GCal', frappe.session.user)
+	# store = Storage('GCal', "makarand")
 	credentials = store.get()
 
 	if not credentials or credentials.invalid:
