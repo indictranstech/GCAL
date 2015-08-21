@@ -27,7 +27,7 @@ cur_frm.cscript.validate = function(){
 						if(r.message.url)
 							window.location.replace(r.message.url);
 						if(r.message.is_synced)
-							frappe.msgprint("Google Calendar Events synced sucessfully")
+							show_alert("Google Calendar Events synced sucessfully")
 					else
 						frappe.msgprint("Error occured please try after some time")
 				}
