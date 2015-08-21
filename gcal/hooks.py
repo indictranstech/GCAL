@@ -80,18 +80,18 @@ scheduler_events = {
 	"all": [
 		"gcal.tasks.sync_all"
 	],
-	# "daily": [
-	# 	"gcal.tasks.sync_daily"
-	# ],
-	# "hourly": [
-	# 	"gcal.tasks.sync_hourly"
-	# ],
-	# "weekly": [
-	# 	"gcal.tasks.sync_weekly"
-	# ],
-	# "monthly": [
-	# 	"gcal.tasks.sync_monthly"
-	# ]
+	"daily": [
+		"gcal.tasks.sync_daily"
+	],
+	"hourly": [
+		"gcal.tasks.sync_hourly"
+	],
+	"weekly": [
+		"gcal.tasks.sync_weekly"
+	],
+	"monthly": [
+		"gcal.tasks.sync_monthly"
+	]
 }
 
 fixtures = ['Custom Field']
@@ -107,4 +107,3 @@ fixtures = ['Custom Field']
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "gcal.event.get_events"
 # }
-
