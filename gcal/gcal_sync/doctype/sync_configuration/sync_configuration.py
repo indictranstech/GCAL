@@ -78,7 +78,7 @@ def get_oauth_keys(provider):
 			"client_secret":social.client_secret
 		}
 	else:
-		frappe.throws("Please set Client Id and Client Secret.")
+		frappe.msgprint("Please set Client Id and Client Secret.",raise_exception=1)
 
 def get_redirect_uri(provider):
 	redirect_uri = oauth2_providers[provider]["redirect_uri"]
