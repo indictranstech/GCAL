@@ -94,11 +94,13 @@ def get_formatted_date(date, is_all_day=0):
 		timezone = frappe.db.get_value("Sync Configuration",frappe.session.user, "time_zone")
 		if not timezone:
 			timezone = frappe.db.get_value("System Settings", None, "time_zone")
-
-		return {
-			'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S"),
-			'timeZone': timezone
-		}
+			if timezone:
+				return {
+					'dateTime':datetime.strptime(str_date, '%Y-%m-%d %H:%M:%S').strftime("%Y-%m-%dT%H:%M:%S"),
+					'timeZone': timezone
+				}
+			else:
+				frappe.msgprint("Please set Time Zone under Setup > Settings > System Settings", raise_exception=1)
 
 def get_attendees(doc):
 	import json
